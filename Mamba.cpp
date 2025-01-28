@@ -387,17 +387,9 @@ int backLinearFixed(NNLinear* l, const float* X, int N, const float* DO, float* 
             if (l->BG) l->BG[j] += DO[i * l->outputs + j];
 
             for (int k = 0; k < l->inputs; ++k) {
-                /*if (j == 0 && k == 0) {
-                    printf("%g += %g * %g\n", l->WG[j * l->inputs + k], X[i * l->inputs + k], DO[i * l->outputs + j]);
-                }*/
                 l->WG[j * l->inputs + k] += X[i * l->inputs + k] * DO[i * l->outputs + j];
 
                 if (D) {
-                    /*if (l->outputs == 64 && i == 0 && k == 0) {
-                        printf("%g += %g * %g           D(%d,%d) += DO(%d, %d) * W(%d, %d)\n", D[i * l->inputs + k], DO[i * l->outputs + j], l->W[j * l->inputs + k],
-                            i, k, i, j, j, k);
-                    }*/
-
                     D[i * l->inputs + k] += DO[i * l->outputs + j] * l->W[j * l->inputs + k];
                 }
 
@@ -473,10 +465,6 @@ int backConv1DFixed(NNConv1D* c, const float* X, int N, int D, const float* DO, 
                 for (int k = 0; k < cnt; ++k) {
 
                     if (DI) {
-                        /*if ((xidx + k) == N - 1 && i == 0) {
-                            printf("C: %g += %g * %g       DI(%d, %d) += W(%d) * DO(%d, %d)\n", DI[(xidx + k) * D + i], W[k + sidx], DO[j * D + i],
-                                                                                                            (xidx + k), i, k+sidx, j, i);
-                        }*/
                         DI[(xidx + k) * D + i] += W[k + sidx] * DO[j * D + i];
                     }
 
@@ -578,7 +566,6 @@ int runConv1DFixed(NNConv1D* c, const float* X, int N, int D, float* O, char row
 
                 for (int k = 0; k < cnt; ++k) {
                     o += W[k + sidx] * X[(xidx + k) * D + i];
-                    //O += W[k + sidx] * X[i * D + (xidx + k)];
                 }
 
                 O[j * D + i] = o;
@@ -915,17 +902,12 @@ void selectiveScanLowMem(float* X, const float* delta, const float* A, const flo
 
     //BX, deltaA, deltaB: N X d_inner X d_state
 
-    //deltaA = torch.exp(delta.unsqueeze(-1) * A) # (B, N, d_inner, d_state)
+    //deltaA = torch.exp(delta.unsqueeze(-1) * A) #Â (B, N, d_inner, d_state)
     // 
     //build a new A matrix that's multiplied by the columns of delta
     //
-    //deltaB = delta.unsqueeze(-1) * B.unsqueeze(2) # (B, N, d_inner, d_state)
-    //BX = deltaB * (x.unsqueeze(-1)) # (B, N, d_inner, d_state)
-    //printf("C:\n");
-    //mshow(C, N, d_state);
-
-
-
+    //deltaB = delta.unsqueeze(-1) * B.unsqueeze(2) #Â (B, N, d_inner, d_state)
+    //BX = deltaB * (x.unsqueeze(-1)) #Â (B, N, d_inner, d_state)
     memset(buffer, 0, d_inner * d_state * sizeof(float));
 
     for (int i = 0; i < N; ++i) {
@@ -976,18 +958,13 @@ void selectiveScan(const float* X, const float* delta, const float* A, const flo
 
     //BX, deltaA, deltaB: N X d_inner X d_state
 
-    //deltaA = torch.exp(delta.unsqueeze(-1) * A) # (B, N, d_inner, d_state)
+    //deltaA = torch.exp(delta.unsqueeze(-1) * A) #Â (B, N, d_inner, d_state)
     // 
     //build a new A matrix that's multiplied by the columns of delta
     //
-    //deltaB = delta.unsqueeze(-1) * B.unsqueeze(2) # (B, N, d_inner, d_state)
-    //BX = deltaB * (x.unsqueeze(-1)) # (B, N, d_inner, d_state)
-    //printf("C:\n");
-    //mshow(C, N, d_state);
+    //deltaB = delta.unsqueeze(-1) * B.unsqueeze(2) #Â (B, N, d_inner, d_state)
+    //BX = deltaB * (x.unsqueeze(-1)) #Â (B, N, d_inner, d_state)
 
-
-
-    //memset(buffer, 0, N * d_inner * d_state * sizeof(float));
     memset(Y_buf, 0, N * d_inner * sizeof(float));
 
     for (int i = 0; i < N; ++i) {
@@ -1055,12 +1032,7 @@ void selectiveScanBackward(const float* X, const float* delta, const float* A, c
             buf_dd[j] += X[i * d_inner + j] * dy[i * d_inner + j];
 
             //dy/dx
-            //dydx[i * d_inner + j] += D[j] * dy[i * d_inner + j];
-
             buf_dx[i * d_inner + j] = D[j] * dy[i * d_inner + j];
-            //buf_dx[i * d_inner + j] = 0;
-
-            //float dydx = D[j] * dy[i * d_inner + j];
 
             for (int k = 0; k < d_state; ++k) {
 
@@ -1106,26 +1078,6 @@ void selectiveScanBackward(const float* X, const float* delta, const float* A, c
         }
 
     }
-
-    /*
-
-    printf("ddelta: ");
-    mshow(buf_ddelta, N, d_inner);
-
-    printf("dx: \n");
-    mshow(buf_dx, N, d_inner);
-    printf("da: \n");
-    mshow(buf_da, d_inner, d_state);
-
-    printf("db: \n");
-    mshow(buf_db, N, d_state);
-    printf("dc: \n");
-    mshow(buf_dc, N, d_state);
-    printf("dd: \n");
-    mshow(buf_dd, 1, d_inner);*/
-
-
-
 }
 
 
@@ -1196,9 +1148,6 @@ int createMambaAdam(MambaAdam** adam, Mamba* m)
         ret->out->bv = fmem; fmem += m->loutput.outputs;
     }
 
-    //for (int k = 0; k < 4; ++k) {
-    //    ret->lin[k] = (AdamItem*)fmem; fmem = (float*)(((char*)fmem) + p->n_layers * sizeof(AdamItem));
-    //}
 
     for (int i = 0; i < p->n_layers; ++i) {
         ResidualBlock* rb = &m->blocks[i];
@@ -1336,18 +1285,12 @@ int forwardMamba(Mamba* m, const float* X, int N, int D, float* out)
 
         runLinearFixed(&mb->in_proj, os_1, N, d_state, oi2);
 
-
-
-
         splitFixed(oi2, oi_0, N, 2 * d_inner, d_inner);
 
         //handle x
         runConv1DFixed(&mb->conv, oi2, N, d_inner, oi_1, 1);
 
         SiLU(oi_1, N, d_inner);
-
-
-
 
         for (int j = 0; j < m->p.d_inner; ++j) {
             for (int k = 0; k < m->p.d_state; ++k) {
@@ -1361,8 +1304,6 @@ int forwardMamba(Mamba* m, const float* X, int N, int D, float* out)
 
         runLinearFixed(&mb->dt_proj, or , N, dt_rank, oi2);
         SoftPlus(oi2, N, d_inner);
-
-
 
         selectiveScanLowMem(oi_1, oi2, ois, os_1, os_2, mb->D, buf, N, d_inner, d_state);
 
@@ -1477,13 +1418,7 @@ int trainMamba(Mamba* m, const float* X, const float* Y, int N, int D, int itera
 
     for (int it = 0; it < iterations; ++it) {
 
-
         runLinear(m, &m->linput, X, N, D, &b1, &bc1, 0, 0);
-
-        //mshow(X, N, D);
-        //mshow(m->linput.W, p->d_model, D);
-        //mshow(m->linput.B, 1, p->d_model);
-
 
         for (int i = 0; i < m->p.n_layers; ++i) {
             ResidualBlock* bl = &m->blocks[i];
@@ -1602,8 +1537,6 @@ int trainMamba(Mamba* m, const float* X, const float* Y, int N, int D, int itera
 
             //INPUT: N X d_inner
             //OUTPUT: N X d_model
-            // 
-            //runLinear(m, &bl->m.out_proj, y, N, p->d_inner, &b1, &bc1, &bn1, &bd1);
             runLinearFixed(&bl->m.out_proj, o[12], N, p->d_inner, o[14]);
 
             //ending MambaForward
@@ -1637,12 +1570,6 @@ int trainMamba(Mamba* m, const float* X, const float* Y, int N, int D, int itera
             if ((out[i] < 0 && Y[i] < 0) || (out[i] > 0 && Y[i] > 0)) {
                 ++cor;
             }
-
-
-            /*if (it == iterations - 1) {
-                printf("output: %.4g  Y: %.4g \n", out[i], Y[i]);
-
-            }*/
 
             mse += (out[i] - Y[i]) * (out[i] - Y[i]);
         }
@@ -1683,11 +1610,7 @@ int trainMamba(Mamba* m, const float* X, const float* Y, int N, int D, int itera
 
 
             selectiveScanBackward(O[i][5], O[i][10], Ai, O[i][8], O[i][9], m->blocks[0].m.D, b2, buf[i], dx, ddelta, bl->m.AG, db, dc, bl->m.DG, N, p->d_inner, p->d_state);
-
-
             SoftPlusBackward(O[i][10], ddelta, N, p->d_inner);
-
-
             backLinear(m, &bl->m.dt_proj, O[i][7], N, ddelta, &b3, &bc3);
 
             //merge deltaBC
@@ -1752,8 +1675,6 @@ int trainMamba(Mamba* m, const float* X, const float* Y, int N, int D, int itera
 
             backRmsNorm(m, O[i][0], b2, N, p->d_model);
 
-            //if (i == 0) mshow(bl->m.in_proj.WG, p->d_inner * 2, p->d_model);
-            //if (i == 0) mshow(b2, N, p->d_model);
         }
 
         backLinear(m, &m->linput, X, N, b2, &b1, &bc1);
@@ -1860,8 +1781,7 @@ int trainMambaBatch(MambaBatch* mba, const float* X, const float* Y, int mcnt, i
         DWORD ret = WaitForMultipleObjects(active, h, FALSE, INFINITE);
         int curidx = ret - WAIT_OBJECT_0;
         CloseHandle(h[curidx]);
-        //printf("%d: rmse: %g  acc: %g\n", mp[curidx]->idx, mp[curidx]->rmse, mp[curidx]->acc);
-
+            
         MBStruct* ptr = mp[curidx];
         for (int i = curidx; i < active - 1; ++i) {
             h[i] = h[i + 1];
