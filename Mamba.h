@@ -87,8 +87,6 @@ struct Mamba {
     //hidden X output
     NNLinear loutput;
 
-
-
     int b, l, d;
 
 };
@@ -112,7 +110,6 @@ struct AdamItem {
     float* bm, * bv;
 
     int wn, bn;
-
 };
 
 
